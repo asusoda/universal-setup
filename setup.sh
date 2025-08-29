@@ -25,8 +25,8 @@ else
   if [ -r /etc/os-release ]; then
     # shellcheck disable=SC1091
     . /etc/os-release
-    OS="$ID"
-    DISTRO="$ID_LIKE"
+    OS="${ID:-unknown}"
+    DISTRO="${ID_LIKE:-}"   # <-- default to empty to avoid "unbound variable"
   fi
 fi
 

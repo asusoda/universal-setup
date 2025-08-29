@@ -46,7 +46,12 @@ function Winget-Install {
 
   try {
     Write-Info "Installing $Id $(if ($Version) { "($Version)" }) via winget..."
-    winget @args | Out-Null
+    $output = winget @args 2>&1
+    if ($LASTEXITCODE -ne 0) {
+      Write-Warn "winget install for $Id failed with exit code $LASTEXITCODE"
+      Write-Warn "Output: $output"
+      return $false
+    }
     return $true
   } catch {
     Write-Warn "winget install for $Id failed: $($_.Exception.Message)"
@@ -134,9 +139,22 @@ if (-not $pythonOk) {
 
   # Install desired Python 3.8.x and set global
   Write-Info "Installing Python $PythonVersion via pyenv-win..."
-  & pyenv install -s $PythonVersion
-  & pyenv global $PythonVersion
-  $pythonOk = $true
+  try {
+    & pyenv install -s $PythonVersion
+    if ($LASTEXITCODE -ne 0) {
+      Write-Err "pyenv install failed with exit code $LASTEXITCODE"
+      $pythonOk = $false
+    } else {
+      & pyenv global $PythonVersion
+      if ($LASTEXITCODE -ne 0) {
+        Write-Warn "Failed to set global Python version"
+      }
+      $pythonOk = $true
+    }
+  } catch {
+    Write-Err "Error during pyenv install: $($_.Exception.Message)"
+    $pythonOk = $false
+  }
 }
 
 # --- Verify Python ---

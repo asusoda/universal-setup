@@ -75,6 +75,22 @@ if (Winget-Present -Id "Git.Git") {
 } else {
   if (-not (Winget-Install -Id "Git.Git" -Exact)) {
     Write-Err "Failed to install Git.Git via winget."
+  } else {
+    # Try to add Git to PATH for current session
+    $gitPaths = @(
+      "$env:ProgramFiles\Git\cmd",
+      "$env:ProgramFiles(x86)\Git\cmd",
+      "$env:LocalAppData\Programs\Git\cmd"
+    )
+    foreach ($gitPath in $gitPaths) {
+      if (Test-Path $gitPath) {
+        if (-not ($env:PATH -split ";" | Where-Object { $_ -ieq $gitPath })) {
+          Write-Info "Adding Git to PATH for current session: $gitPath"
+          $env:PATH = "$gitPath;$env:PATH"
+        }
+        break
+      }
+    }
   }
 }
 try { & git --version | Out-Host } catch { Write-Warn "Git not on PATH yet (open a new shell after script finishes)." }
